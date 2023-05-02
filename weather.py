@@ -108,15 +108,13 @@ def index():
                         replyToken, ImageSendMessage(original_content_url=f'https://cwbopendata.s3.ap-northeast-1.amazonaws.com/MSC/O-A0058-003.png?{time.time_ns()}',
                                                      preview_image_url=f'https://cwbopendata.s3.ap-northeast-1.amazonaws.com/MSC/O-A0058-003.png?{time.time_ns()}'
                                                      ))
-                elif text == '地震':
-                    itt = get_equake()
-                    eqa_info = eq_info(itt)
-                    line_bot_api.reply_message(
-                        replyToken, TextSendMessage(text=eqa_info))
 
-                    payload["messages"] = [{
-                        "type": "text",
-                    }]
+                elif text == '地震' or text == '地震查詢':
+                    u = get_eq_pic()
+                    line_bot_api.reply_message(
+                        replyToken, ImageSendMessage(original_content_url=u,
+                                                     preview_image_url=u
+                                                     ))
 
                 elif text == 'eq':
                     payload["messages"] = [{"type": "text",
@@ -283,6 +281,23 @@ def eq_info(it):
     equ = {}
     equ[0] = info
     return equ
+
+
+def get_eq_pic():
+    msg = ['找不到地震資訊']            # 預設回傳的訊息
+    try:
+        code = 'CWB-5903F8B2-FC6A-4703-9440-01FDFD7B64B2'
+        url = 'https://opendata.cwb.gov.tw/api/v1/rest/datastore/E-A0016-001?Authorization=CWB-5903F8B2-FC6A-4703-9440-01FDFD7B64B2'
+        e_data = requests.get(url)                                   # 爬取地震資訊網址
+        eq = (json.loads(e_data.text)
+              )['records']['Earthquake']
+        for i in eq:
+            img = i['ReportImageURI']                                # 地震圖
+            msg = img
+            break     # 取出第一筆資料後就 break
+        return msg    # 回傳 msg
+    except:
+        return msg    # 如果取資料有發生錯誤，直接回傳 msg
 
 
 def get_earth_quake():
