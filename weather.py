@@ -17,7 +17,7 @@ import logging
 logName = 'MyProgram.log'
 logDir = 'log'
 logPath = logDir + '/' + logName
-# 1231321231231121131312
+
 
 # create log directory
 os.makedirs(logDir, exist_ok=True)
@@ -109,9 +109,15 @@ def index():
                                                      preview_image_url=f'https://cwbopendata.s3.ap-northeast-1.amazonaws.com/MSC/O-A0058-003.png?{time.time_ns()}'
                                                      ))
                 elif text == '地震':
+                    itt = get_equake()
+                    eqa_info = eq_info(itt)
+                    line_bot_api.reply_message(
+                        replyToken, TextSendMessage(text=eqa_info))
+
                     payload["messages"] = [{
                         "type": "text",
-                        "text": get_equake()}]
+                    }]
+
                 elif text == 'eq':
                     payload["messages"] = [{"type": "text",
                                             "text": get_earth_quake()}]
@@ -191,8 +197,8 @@ def index():
                 title = events[0]["message"]["title"]
                 latitude = events[0]["message"]["latitude"]
                 longitude = events[0]["message"]["longitude"]
-                payload["messages"] = [
-                    getLocationConfirmMessage(title, latitude, longitude)]
+                # payload["messages"] = [
+                #     getLocationConfirmMessage(title, latitude, longitude)]
                 logger.info(payload)
                 replyMessage(payload)
 
@@ -200,15 +206,15 @@ def index():
                 data = json.loads(events[0]["postback"]["data"])
                 logger.info(data)
                 action = data["action"]
-                if action == "get_near":
-                    data["action"] = "get_detail"
-                    payload["messages"] = [getCarouselMessage(data)]
-                elif action == "get_detail":
-                    del data["action"]
-                    payload["messages"] = [getTaipei101ImageMessage(),
-                                           getTaipei101LocationMessage(),
-                                           getMRTVideoMessage(),
-                                           getCallCarMessage(data)]
+                # if action == "get_near":
+                #     data["action"] = "get_detail"
+                #     payload["messages"] = [getCarouselMessage(data)]
+                # elif action == "get_detail":
+                #     del data["action"]
+                #     payload["messages"] = [getTaipei101ImageMessage(),
+                #                            getTaipei101LocationMessage(),
+                #                            getMRTVideoMessage(),
+                #                            getCallCarMessage(data)]
                 replyMessage(payload)
 
     return 'OK'
@@ -253,11 +259,10 @@ def get_equake():
         code = 'CWB-5903F8B2-FC6A-4703-9440-01FDFD7B64B2'
         url = f'https://opendata.cwb.gov.tw/api/v1/rest/datastore/E-A0016-001?Authorization={code}'
         e_data = requests.get(url)                                   # 爬取地震資訊網址
-        e_data_json = e_data.json()                                  # json 格式化訊息內容
-        eq = e_data_json['records']['Earthquake']
-        # e_data = requests.get(url)                                   # 爬取地震資訊網址
-        # eq = (json.loads(e_data.text)
-        #       )['records']['earthquake']
+        # e_data_json = e_data.json()                                  # json 格式化訊息內容
+        # eq = e_data_json['records']['Earthquake']
+        eq = (json.loads(e_data.text)
+              )['records']['Earthquake']
         # 取出地震資訊
         i = 0
         while (i <= (len(eq))):
@@ -273,9 +278,10 @@ def get_equake():
 
 
 def eq_info(it):
-    content = it["ReportContent"]
+    info = it["EarthquakeInfo"]
+
     equ = {}
-    equ[0] = content
+    equ[0] = info
     return equ
 
 
@@ -286,14 +292,14 @@ def get_earth_quake():
         url = 'https://opendata.cwb.gov.tw/api/v1/rest/datastore/E-A0016-001?Authorization=CWB-5903F8B2-FC6A-4703-9440-01FDFD7B64B2'
         e_data = requests.get(url)                                   # 爬取地震資訊網址
         eq = (json.loads(e_data.text)
-              )['records']['earthquake']
+              )['records']['Earthquake']
 
         for i in eq:
-            loc = i['earthquakeInfo']['epiCenter']['location']       # 地震地點
-            val = i['earthquakeInfo']['magnitude']['magnitudeValue']  # 地震規模
-            dep = i['earthquakeInfo']['depth']['value']              # 地震深度
-            eq_time = i['earthquakeInfo']['originTime']              # 地震時間
-            img = i['reportImageURI']                                # 地震圖
+            loc = i['EarthquakeInfo']['EpiCenter']['location']       # 地震地點
+            val = i['EarthquakeInfo']['Magnitude']['magnitudeValue']  # 地震規模
+            dep = i['EarthquakeInfo']['Depth']['value']              # 地震深度
+            eq_time = i['EarthquakeInfo']['OriginTime']              # 地震時間
+            img = i['ReportImageURI']                                # 地震圖
             msg = [f'{loc}，芮氏規模 {val} 級，深度 {dep} 公里，發生時間 {eq_time}。', img]
             break     # 取出第一筆資料後就 break
         return msg    # 回傳 msg
